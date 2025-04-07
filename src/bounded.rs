@@ -1,13 +1,10 @@
-use alloc::{boxed::Box, vec::Vec};
-use core::mem::MaybeUninit;
-
-use crossbeam_utils::CachePadded;
-
 use crate::sync::atomic::{AtomicUsize, Ordering};
 use crate::sync::cell::UnsafeCell;
 #[allow(unused_imports)]
 use crate::sync::prelude::*;
 use crate::{busy_wait, ForcePushError, PopError, PushError};
+use alloc::{boxed::Box, vec::Vec};
+use core::mem::MaybeUninit;
 
 /// A slot in a queue.
 struct Slot<T> {
@@ -27,7 +24,7 @@ pub struct Bounded<T> {
     /// represent the lap. The mark bit in the head is always zero.
     ///
     /// Values are popped from the head of the queue.
-    head: CachePadded<AtomicUsize>,
+    head: AtomicUsize,
 
     /// The tail of the queue.
     ///
@@ -36,7 +33,7 @@ pub struct Bounded<T> {
     /// represent the lap. The mark bit indicates that the queue is closed.
     ///
     /// Values are pushed into the tail of the queue.
-    tail: CachePadded<AtomicUsize>,
+    tail: AtomicUsize,
 
     /// The buffer holding slots.
     buffer: Box<[Slot<T>]>,
@@ -76,8 +73,8 @@ impl<T> Bounded<T> {
             buffer: buffer.into(),
             one_lap,
             mark_bit,
-            head: CachePadded::new(AtomicUsize::new(head)),
-            tail: CachePadded::new(AtomicUsize::new(tail)),
+            head: AtomicUsize::new(head),
+            tail: AtomicUsize::new(tail),
         }
     }
 
@@ -205,8 +202,6 @@ impl<T> Bounded<T> {
                 // We've failed to push; run our failure closure.
                 value = fail(value, tail, new_tail, slot)?;
 
-                // Loom complains if there isn't an explicit busy wait here.
-                #[cfg(loom)]
                 busy_wait();
 
                 tail = self.tail.load(Ordering::Relaxed);
@@ -277,8 +272,6 @@ impl<T> Bounded<T> {
                     }
                 }
 
-                // Loom complains if there isn't a busy-wait here.
-                #[cfg(loom)]
                 busy_wait();
 
                 head = self.head.load(Ordering::Relaxed);

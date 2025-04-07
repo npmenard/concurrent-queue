@@ -2,8 +2,6 @@ use alloc::boxed::Box;
 use core::mem::MaybeUninit;
 use core::ptr;
 
-use crossbeam_utils::CachePadded;
-
 use crate::const_fn;
 use crate::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use crate::sync::cell::UnsafeCell;
@@ -142,10 +140,10 @@ struct Position<T> {
 /// An unbounded queue.
 pub struct Unbounded<T> {
     /// The head of the queue.
-    head: CachePadded<Position<T>>,
+    head: Position<T>,
 
     /// The tail of the queue.
-    tail: CachePadded<Position<T>>,
+    tail: Position<T>,
 }
 
 impl<T> Unbounded<T> {
@@ -154,14 +152,14 @@ impl<T> Unbounded<T> {
         /// Creates a new unbounded queue.
         pub const fn new() -> Unbounded<T> {
             Unbounded {
-                head: CachePadded::new(Position {
+                head: Position {
                     block: AtomicPtr::new(ptr::null_mut()),
                     index: AtomicUsize::new(0),
-                }),
-                tail: CachePadded::new(Position {
+                },
+                tail: Position {
                     block: AtomicPtr::new(ptr::null_mut()),
                     index: AtomicUsize::new(0),
-                }),
+                },
             }
         }
     );
@@ -405,7 +403,7 @@ impl<T> Unbounded<T> {
 impl<T> Drop for Unbounded<T> {
     fn drop(&mut self) {
         let Self { head, tail } = self;
-        let Position { index: head, block } = &mut **head;
+        let Position { index: head, block } = &mut *head;
 
         head.with_mut(|&mut mut head| {
             tail.index.with_mut(|&mut mut tail| {
