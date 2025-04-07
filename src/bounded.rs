@@ -5,6 +5,8 @@ use crate::sync::prelude::*;
 use crate::{busy_wait, ForcePushError, PopError, PushError};
 use alloc::{boxed::Box, vec::Vec};
 use core::mem::MaybeUninit;
+use core::time::Duration;
+use std::thread::sleep;
 
 /// A slot in a queue.
 struct Slot<T> {
@@ -272,7 +274,7 @@ impl<T> Bounded<T> {
                     }
                 }
 
-                busy_wait();
+                sleep(Duration::from_millis(250));
 
                 head = self.head.load(Ordering::Relaxed);
             } else {
