@@ -104,7 +104,7 @@ impl<T> Bounded<T> {
             // Try to move the head.
             if self
                 .head
-                .compare_exchange_weak(head, new_head, Ordering::SeqCst, Ordering::Relaxed)
+                .compare_exchange(head, new_head, Ordering::SeqCst, Ordering::Relaxed)
                 .is_ok()
             {
                 // Move the tail.
@@ -180,7 +180,7 @@ impl<T> Bounded<T> {
             // If the tail and the stamp match, we may attempt to push.
             if tail == stamp {
                 // Try moving the tail.
-                match self.tail.compare_exchange_weak(
+                match self.tail.compare_exchange(
                     tail,
                     new_tail,
                     Ordering::SeqCst,
@@ -241,7 +241,7 @@ impl<T> Bounded<T> {
                 };
 
                 // Try moving the head.
-                match self.head.compare_exchange_weak(
+                match self.head.compare_exchange(
                     head,
                     new,
                     Ordering::SeqCst,
