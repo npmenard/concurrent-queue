@@ -241,12 +241,10 @@ impl<T> Bounded<T> {
                 };
 
                 // Try moving the head.
-                match self.head.compare_exchange(
-                    head,
-                    new,
-                    Ordering::SeqCst,
-                    Ordering::Relaxed,
-                ) {
+                match self
+                    .head
+                    .compare_exchange(head, new, Ordering::SeqCst, Ordering::Relaxed)
+                {
                     Ok(_) => {
                         // Read the value from the slot and update the stamp.
                         let value = slot
@@ -274,7 +272,7 @@ impl<T> Bounded<T> {
                     }
                 }
 
-                sleep(Duration::from_millis(250));
+                sleep(Duration::from_millis(10));
 
                 head = self.head.load(Ordering::Relaxed);
             } else {

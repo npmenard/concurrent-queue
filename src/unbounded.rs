@@ -217,7 +217,7 @@ impl<T> Unbounded<T> {
             let new_tail = tail + (1 << SHIFT);
 
             // Try advancing the tail forward.
-            match self.tail.index.compare_exchange_weak(
+            match self.tail.index.compare_exchange(
                 tail,
                 new_tail,
                 Ordering::SeqCst,
@@ -296,7 +296,7 @@ impl<T> Unbounded<T> {
             }
 
             // Try moving the head index forward.
-            match self.head.index.compare_exchange_weak(
+            match self.head.index.compare_exchange(
                 head,
                 new_head,
                 Ordering::SeqCst,
